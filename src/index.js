@@ -65,7 +65,6 @@
 //   console.log(`🚀 Server running on port ${PORT}`);
 // });
 
-
 require("dotenv").config();
 const express = require("express");
 const connectDB = require("../src/config/db");
@@ -84,67 +83,81 @@ const videoRouter = require("../src/routes/videosRoutes");
 const app = express();
 const server = http.createServer(app);
 
-// WebSockets Setup
+// ✅ WebSockets Setup with Polling Fallback
 const io = socketIo(server, {
     cors: {
-        origin: "*",
+        origin: "*", // Allow all origins
         methods: ["GET", "POST"]
-    }
+    },
+    transports: ["websocket", "polling"] // ✅ Added Polling Fallback
 });
 
-// Attach io to req in middleware
+// ✅ Log WebSocket Connection Status
+io.on("connection", (socket) => {
+    console.log(`🔌 New WebSocket connection: ${socket.id}`);
+
+    // ✅ Log when a client sends a message
+    socket.on("message", (data) => {
+        console.log(`📩 Received message: ${JSON.stringify(data)}`);
+    });
+
+    // ✅ Handle Like Events
+    socket.on("like", (data) => {
+        console.log(`👍 Like Event: ${JSON.stringify(data)}`);
+        io.emit("likeUpdate", data);
+    });
+
+    // ✅ Handle Comment Events
+    socket.on("comment", (data) => {
+        console.log(`💬 Comment Event: ${JSON.stringify(data)}`);
+        io.emit("commentUpdate", data);
+    });
+
+    // ✅ Handle New Video Uploads
+    socket.on("newVideo", (data) => {
+        console.log(`🎥 New Video Uploaded: ${JSON.stringify(data)}`);
+        io.emit("videoFeedUpdate", data);
+    });
+
+    // ✅ Keep Connection Alive (Prevents Disconnection on Render)
+    setInterval(() => {
+        socket.emit("ping", "keep-alive");
+        console.log(`🔄 Sent Keep-Alive Ping to: ${socket.id}`);
+    }, 25000);
+
+    // ✅ Handle Disconnection
+    socket.on("disconnect", () => {
+        console.log(`❌ User Disconnected: ${socket.id}`);
+    });
+});
+
+// ✅ Attach io to req in middleware (for future use)
 app.use((req, res, next) => {
-    res.setHeader("Content-Security-Policy", "default-src 'self'; connect-src 'self' ws://localhost:5000");
-    // req.io = io;
+    req.io = io;
     next();
 });
 
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB
+// ✅ Connect to MongoDB
 connectDB();
 
-// Routes
+// ✅ Define API Routes
 app.use("/api", jobRoutes);
-app.get("/", (req, res) => {
-    res.send("Welcome to NextStep");
-});
 app.use("/user", userRouter);
 app.use("/posts", postRouter);
 app.use("/profile", profileRouter);
 app.use("/videos", videoRouter);
 
-// ✅ WebSocket Handling
-io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
-
-    // Listen for like events
-    socket.on("like", (data) => {
-        console.log("Like event received:", data);
-        io.emit("likeUpdate", data);  // Broadcast to all clients
-    });
-
-    // Listen for comment events
-    socket.on("comment", (data) => {
-        console.log("Comment event received:", data);
-        io.emit("commentUpdate", data);
-    });
-
-    // Listen for new video upload event
-    socket.on("newVideo", (data) => {
-        console.log("New video uploaded:", data);
-        io.emit("videoFeedUpdate", data);
-    });
-
-    socket.on("disconnect", () => {
-        console.log("A user disconnected:", socket.id);
-    });
+app.get("/", (req, res) => {
+    res.send("🚀 Welcome to NextStep Backend");
 });
 
-// Error Handler Middleware
+// ✅ Error Handler Middleware
 app.use(errorHandler);
 
+// ✅ Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
