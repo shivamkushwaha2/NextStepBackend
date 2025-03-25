@@ -120,10 +120,10 @@ io.on("connection", (socket) => {
     });
 
     // ✅ Keep Connection Alive (Prevents Disconnection on Render)
-    setInterval(() => {
-        socket.emit("ping", "keep-alive");
-        console.log(`🔄 Sent Keep-Alive Ping to: ${socket.id}`);
-    }, 25000);
+    // setInterval(() => {
+    //     socket.emit("ping", "keep-alive");
+    //     console.log(`🔄 Sent Keep-Alive Ping to: ${socket.id}`);
+    // }, 25000);
 
     // ✅ Handle Disconnection
     socket.on("disconnect", () => {
