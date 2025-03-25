@@ -14,6 +14,8 @@ const postRouter = require("../src/routes/postRoutes");
 const profileRouter = require("../src/routes/profileRoutes")
 const userRouter = require("../src/routes/userRoutes");
 
+const videoRouter = require("../src/routes/videosRoutes");
+
 const app = express();
 
 const server = http.createServer(app);
@@ -53,6 +55,7 @@ io.on("connection", (socket) => {
 app.use("/user",userRouter);
 app.use("/posts", postRouter);
 app.use("/profile",profileRouter);
+app.use("/videos", videoRouter);  
 
 // Error Handler Middleware
 app.use(errorHandler);
