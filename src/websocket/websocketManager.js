@@ -16,7 +16,7 @@ const setupWebSocket = (io) => {
         });
 
         socket.on("shareEvent", (data) => {
-            console.log("📤 Received Share Event:", data);  // ✅ Debugging
+            console.log("📤 Received Share Event:", data);
             addShare(io, data.videoId, data.userId);
         }); 
 
@@ -74,7 +74,7 @@ async function addShare(io, videoId, userId) {
     try {
         const video = await Video.findById(videoId);
         if (!video){
-            console.log("⚠️ Video not found "+videoId+" "+userId);
+            console.log("Video not found "+videoId+" "+userId);
             return;
         }
 
@@ -83,7 +83,7 @@ async function addShare(io, videoId, userId) {
         // Emit the share update to all connected clients
         io.emit("shareUpdate", { videoId, shares: video.shares.length });
         await video.save();
-        console.log(`🔗 Share Updated: Video ID: ${videoId}, Shares: ${video.shares.length}`);
+        console.log(` Share Updated: Video ID: ${videoId}, Shares: ${video.shares.length}`);
     } catch (error) {
         console.error("Error adding share:", error);
     }

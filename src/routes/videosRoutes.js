@@ -1,10 +1,51 @@
+// const express = require("express");
+// const router = express.Router();
+// const s3 = require("../config/awsConfig");
+// const Video = require("../models/Video"); // Ensure Video model is correctly imported
+
+
+// // ✅ Generate Pre-signed URL for Video Upload
+// router.get("/generate-presigned-url", async (req, res) => {
+//     try {
+//         const { fileType } = req.query;
+
+//         if (!fileType) return res.status(400).json({ message: "File type is required" });
+
+//         const fileName = `videos/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileType.split("/")[1]}`;
+
+//         const presignedUrl = await s3.getSignedUrlPromise("putObject", {
+//             Bucket: process.env.AWS_S3_BUCKET,
+//             Key: fileName,
+//             ContentType: fileType,
+//             Expires: 300 // 5 mins
+//         });
+
+//         res.status(200).json({
+//             presignedUrl,
+//             fileUrl: `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`
+//         });
+
+//     } catch (error) {
+//         console.error("Error generating pre-signed URL:", error);
+//         res.status(500).json({ message: "Could not generate URL" });
+//     }
+// });
+
 const express = require("express");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+require("dotenv").config();
+const Video = require("../models/Video");
 const router = express.Router();
-const s3 = require("../config/awsConfig");
-const Video = require("../models/Video"); // Ensure Video model is correctly imported
 
+const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
+});
 
-// ✅ Generate Pre-signed URL for Video Upload
 router.get("/generate-presigned-url", async (req, res) => {
     try {
         const { fileType } = req.query;
@@ -13,12 +54,13 @@ router.get("/generate-presigned-url", async (req, res) => {
 
         const fileName = `videos/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileType.split("/")[1]}`;
 
-        const presignedUrl = await s3.getSignedUrlPromise("putObject", {
+        const command = new PutObjectCommand({
             Bucket: process.env.AWS_S3_BUCKET,
             Key: fileName,
             ContentType: fileType,
-            Expires: 300 // 5 mins
         });
+
+        const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
 
         res.status(200).json({
             presignedUrl,
@@ -30,6 +72,7 @@ router.get("/generate-presigned-url", async (req, res) => {
         res.status(500).json({ message: "Could not generate URL" });
     }
 });
+
 
 router.post("/save-video", async (req, res) => {
     const { videoUrl, thumbnailUrl, title, description, userId } = req.body;
