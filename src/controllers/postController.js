@@ -1,129 +1,93 @@
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const multer = require("multer");
 const Post = require("../models/postModel");
-const upload = require('../middlewares/multerConfig'); // Import multer config
+require("dotenv").config();
 
+// ✅ Initialize S3 Client
+const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    }
+});
 
-const cloudinary = require("../cloudinary");
+// ✅ Configure Multer (stores files in memory)
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024 }, // Max 8MB
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith("image/")) {
+            return cb(new Error("Only images allowed"), false);
+        }
+        cb(null, true);
+    }
+});
 
+// ✅ Function to upload image to S3
+const uploadToS3 = async (fileBuffer, fileName, fileType) => {
+    const fileKey = `posts/${Date.now()}-${fileName}`;
+    
+    const params = {
+        Bucket: process.env.AWS_S3_BUCKET,
+        Key: fileKey,
+        Body: fileBuffer,
+        ContentType: fileType
+    };
 
-const uploadToCloudinary = (fileBuffer) => {
-    return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-            { folder: 'posts' }, // Optionally specify a folder in Cloudinary
-            (error, result) => {
-                if (error) {
-                    reject(error); // If there is an error, reject the promise
-                } else {
-                    resolve(result.secure_url); // Resolve the promise with the secure URL
-                }
-            }
-        );
-        stream.end(fileBuffer); // Pass the file buffer directly to Cloudinary
-    });
+    try {
+        await s3.send(new PutObjectCommand(params));
+        return `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+    } catch (error) {
+        console.error("S3 Upload Error:", error);
+        throw new Error("Failed to upload image to S3");
+    }
 };
 
-// Create a post
 const createPost = async (req, res) => {
-    const { content } = req.body; // Extract content from request body
-    let imageUrl = '';
+    const { content } = req.body;
+    let imageUrl = "";
 
     try {
         if (!content) {
             return res.status(400).json({ message: "Content is required" });
         }
 
-        // Check if an image file was uploaded
+        console.log("User ID from request:", req.userId); // ✅ Debugging log
+
+        // ✅ If an image is uploaded, send it to S3
         if (req.file) {
-            imageUrl = await uploadToCloudinary(req.file.buffer); // Upload the file and get the URL
+            imageUrl = await uploadToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
         }
 
-        // Create the new post in the database
+        if (!req.userId) {
+            return res.status(401).json({ message: "Unauthorized: User ID is missing" });
+        }
+
+        // ✅ Save post in MongoDB
         const newPost = await Post.create({
             content,
-            imageUrl, // Set the imageUrl or leave it empty if no image
-            user: req.userId // Get the userId from the auth middleware
+            imageUrl,
+            user: req.userId // Ensure user ID is being stored
         });
 
         res.status(201).json(newPost);
     } catch (error) {
-        console.log("CREATE POST ERROR " + error);
+        console.error("CREATE POST ERROR:", error);
         res.status(500).json({ message: "Something went wrong" });
     }
 };
 
 
-// Get all posts
+// ✅ Get all posts
 const getPosts = async (req, res) => {
     try {
-        const posts = await Post.find().populate("user", "name email").sort({ createdAt: -1 }); // Fetch posts and sort by recent
+        const posts = await Post.find().populate("user", "name email profilePic").sort({ createdAt: -1 });
         res.status(200).json(posts);
     } catch (error) {
-        console.log(error);
+        console.error(error);
         res.status(500).json({ message: "Something went wrong" });
     }
 };
 
-
-// const likePost = async (req, res) => {
-//     const { postId } = req.params;
-
-//     try {
-//         const post = await Post.findById(postId).populate("user", "name email"); // Populate the user field
-
-//         if (!post) {
-//             return res.status(404).json({ message: "Post not found" });
-//         }
-
-//         // Toggle like/unlike
-//         const liked = post.likes.includes(req.userId);
-//         if (liked) {
-//             post.likes = post.likes.filter((id) => id.toString() !== req.userId); // Unlike
-//         } else {
-//             post.likes.push(req.userId); // Like the post
-//         }
-
-//         await post.save();
-//         res.status(200).json(post); // Send back the updated post with populated user
-//     } catch (error) {
-//         res.status(500).json({ message: "Something went wrong" });
-//         console.log(error);
-//     }
-// };
-
-const likePost = async (req, res) => {
-    try {
-        const { id: postId } = req.params;
-        const userId = req.user.id; // Extract user ID from middleware
-
-        const post = await Post.findById(postId);
-        if (!post) {
-            return res.status(404).json({ message: "Post not found" });
-        }
-
-        // Check if user already liked the post
-        const alreadyLiked = post.likes.includes(userId);
-
-        if (alreadyLiked) {
-            post.likes = post.likes.filter(id => id.toString() !== userId);
-        } else {
-            post.likes.push(userId);
-        }
-
-        await post.save();
-
-        // ✅ Emit WebSocket Event (Now `req.io` is defined)
-        req.io.emit("postLiked", { postId, userId, likesCount: post.likes.length });
-
-        res.status(200).json({
-            message: alreadyLiked ? "Post unliked" : "Post liked",
-            likes: post.likes.length
-        });
-
-    } catch (error) {
-        console.error("Error liking post:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-};
-
-
-
-module.exports = { createPost, getPosts, likePost };
+module.exports = { createPost, getPosts, upload };
