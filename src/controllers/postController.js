@@ -3,7 +3,7 @@ const multer = require("multer");
 const Post = require("../models/postModel");
 require("dotenv").config();
 
-// ✅ Initialize S3 Client
+// Initialize S3 Client
 const s3 = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -12,7 +12,7 @@ const s3 = new S3Client({
     }
 });
 
-// ✅ Configure Multer (stores files in memory)
+//  Configure Multer (stores files in memory)
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 8 * 1024 * 1024 }, // Max 8MB
@@ -24,7 +24,7 @@ const upload = multer({
     }
 });
 
-// ✅ Function to upload image to S3
+//  Function to upload image to S3
 const uploadToS3 = async (fileBuffer, fileName, fileType) => {
     const fileKey = `posts/${Date.now()}-${fileName}`;
     
@@ -53,9 +53,8 @@ const createPost = async (req, res) => {
             return res.status(400).json({ message: "Content is required" });
         }
 
-        console.log("User ID from request:", req.userId); // ✅ Debugging log
 
-        // ✅ If an image is uploaded, send it to S3
+        //  If an image is uploaded, send it to S3
         if (req.file) {
             imageUrl = await uploadToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
         }
@@ -64,7 +63,7 @@ const createPost = async (req, res) => {
             return res.status(401).json({ message: "Unauthorized: User ID is missing" });
         }
 
-        // ✅ Save post in MongoDB
+        // Save post in MongoDB
         const newPost = await Post.create({
             content,
             imageUrl,
@@ -79,7 +78,7 @@ const createPost = async (req, res) => {
 };
 
 
-// ✅ Get all posts
+// Get all posts
 const getPosts = async (req, res) => {
     try {
         const posts = await Post.find().populate("user", "name email profilePic").sort({ createdAt: -1 });
