@@ -168,20 +168,21 @@ async function updatePostLikes(io, postId, userId, isLike) {
 
 async function addPostComment(io, postId, userId, text) {
     try {
+        // Step 1: Push new comment
         const post = await Post.findById(postId);
         if (!post) return;
 
-        // Push comment
         post.comments.push({ user: userId, text });
         await post.save();
 
-        // Get the last comment (the one just added)
-        const latestComment = post.comments[post.comments.length - 1];
+        // Step 2: Re-fetch post with populated latest comment
+        const updatedPost = await Post.findById(postId)
+            .populate("comments.user", "name profilePic");
 
-        // Populate the user
-        await latestComment.populate("user", "name profilePic");
+        // Step 3: Get the last (just added) comment
+        const latestComment = updatedPost.comments[updatedPost.comments.length - 1];
 
-        // Emit the new comment with user info
+        // Step 4: Emit with populated user
         io.emit("postCommentUpdate", {
             postId,
             comment: {
@@ -201,6 +202,7 @@ async function addPostComment(io, postId, userId, text) {
         console.error("❌ Error adding post comment:", error);
     }
 }
+
 
 //  Add Post Share
 async function addPostShare(io, postId, userId) {
