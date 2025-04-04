@@ -59,8 +59,9 @@ router.get("/videos", async (req, res) => {
         const { page = 1, limit = 10 } = req.query;
 
         const videos = await Video.find()
-            .populate("user", "name profilePic")
-            .sort({ createdAt: -1 })  // Newest first
+            .populate("user", "name profilePic")                  // 👍 for video uploader
+            .populate("comments.user", "name profilePic")         // ✅ populate comment authors
+            .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
 
@@ -69,6 +70,7 @@ router.get("/videos", async (req, res) => {
         res.status(500).json({ message: "Error fetching videos" });
     }
 });
+
 
 router.post("/like/:videoId", async (req, res) => {
     const { userId } = req.body;
