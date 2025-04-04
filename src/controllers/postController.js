@@ -79,14 +79,28 @@ const createPost = async (req, res) => {
 
 
 // Get all posts
+// const getPosts = async (req, res) => {
+//     try {
+//         const posts = await Post.find().populate("user", "name email profilePic").sort({ createdAt: -1 });
+//         res.status(200).json(posts);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: "Something went wrong" });
+//     }
+// };
 const getPosts = async (req, res) => {
     try {
-        const posts = await Post.find().populate("user", "name email profilePic").sort({ createdAt: -1 });
+        const posts = await Post.find()
+            .populate("user", "name email profilePic")
+            .populate("comments.user", "name email profilePic") // ✅ populate user in comments
+            .sort({ createdAt: -1 });
+
         res.status(200).json(posts);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Something went wrong" });
     }
 };
+
 
 module.exports = { createPost, getPosts, upload };
