@@ -8,8 +8,6 @@ const setupWebSocket = (io) => {
         // Listen for like events
         socket.on("likeEvent", (data) => {
             updateLikes(io, data.videoId, data.userId, data.isLike);
-            console.log("Extracted values -> postId:", data.videoId, "userId:", data.userId, "isLike:", data.isLike);
-
         });
 
         // Listen for comment events
@@ -24,18 +22,12 @@ const setupWebSocket = (io) => {
 
         // 📝 Post Events
         socket.on("postLikeEvent", (data) => {
-            console.log("Received postLikeEvent (raw):", data); // 🔍 Check raw data
-            console.log("Extracted values -> postId:", data.postId, "userId:", data.userId, "isLike:", data.isLike);
-            
-            if (!data || !data.postId || !data.userId || data.isLike === undefined) {
-                console.error("❌ Missing required fields in postLikeEvent:", data);
-                return;
-            }
+            console.log("Received postLikeEvent (raw):", data);
         
             updatePostLikes(io, data.postId, data.userId, data.isLike);
         });
         
-                socket.on("postCommentEvent", (data) => addPostComment(io, data.postId, data.userId, data.comment));
+        socket.on("postCommentEvent", (data) => addPostComment(io, data.postId, data.userId, data.comment));
         socket.on("postShareEvent", (data) => addPostShare(io, data.postId, data.userId));
 
 
@@ -137,7 +129,13 @@ async function updatePostLikes(io, postId, userId, isLike) {
             post.likes = post.likes.filter((uid) => uid.toString() !== userId);
         }
 
-        io.emit("postLikeUpdate", { postId, likes: post.likes.length });
+        // io.emit("postLikeUpdate", { postId, likes: post.likes.length });
+        io.emit("postLikeUpdate", {
+            postId,
+            likes: post.likes.length,
+            userLiked: post.likes.includes(userId), // ✅ Add this line
+        });
+        
         await post.save();
         console.log(`👍 Post Like Updated: Post ID: ${postId}, Likes: ${post.likes.length}`);
     } catch (error) {
