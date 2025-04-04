@@ -70,55 +70,19 @@ async function updateLikes(io, videoId, userId, isLike) {
 }
 
 
-// async function addComment(io, videoId, userId, text) {
-//     try {
-//         const video = await Video.findById(videoId);
-//         if (!video) return;
-
-//         video.comments.push({ user: userId, text });
-
-//         // Emit the comment update to all connected clients
-//         io.emit("commentUpdate", { videoId, comments: video.comments.length });
-//         await video.save();
-//         console.log(`💬 Comment Updated: Video ID: ${videoId}, Comments: ${video.comments.length}`);
-//     } catch (error) {
-//         console.error("Error adding comment:", error);
-//     }
-// }
-// Add Post Comment with full user info
-async function addPostComment(io, postId, userId, text) {
+async function addComment(io, videoId, userId, text) {
     try {
-        const post = await Post.findById(postId);
-        if (!post) return;
+        const video = await Video.findById(videoId);
+        if (!video) return;
 
-        // Push comment
-        post.comments.push({ user: userId, text });
-        await post.save();
+        video.comments.push({ user: userId, text });
 
-        // Get the last comment (the one just added)
-        const latestComment = post.comments[post.comments.length - 1];
-
-        // Populate the user
-        await latestComment.populate("user", "name profilePic");
-
-        // Emit the new comment with user info
-        io.emit("postCommentUpdate", {
-            postId,
-            comment: {
-                _id: latestComment._id,
-                text: latestComment.text,
-                createdAt: latestComment.createdAt,
-                user: {
-                    _id: latestComment.user._id,
-                    name: latestComment.user.name,
-                    profilePic: latestComment.user.profilePic,
-                },
-            },
-        });
-
-        console.log(`💬 Post Comment Added: ${latestComment.text}`);
+        // Emit the comment update to all connected clients
+        io.emit("commentUpdate", { videoId, comments: video.comments.length });
+        await video.save();
+        console.log(`💬 Comment Updated: Video ID: ${videoId}, Comments: ${video.comments.length}`);
     } catch (error) {
-        console.error("❌ Error adding post comment:", error);
+        console.error("Error adding comment:", error);
     }
 }
 
@@ -187,18 +151,54 @@ async function updatePostLikes(io, postId, userId, isLike) {
 
 
 // Add Post Comment
+// async function addPostComment(io, postId, userId, text) {
+//     try {
+//         const post = await Post.findById(postId);
+//         if (!post) return;
+
+//         post.comments.push({ user: userId, text });
+
+//         io.emit("postCommentUpdate", { postId, comments: post.comments.length });
+//         await post.save();
+//         console.log(`💬 Post Comment Updated: Post ID: ${postId}, Comments: ${post.comments.length}`);
+//     } catch (error) {
+//         console.error("Error adding post comment:", error);
+//     }
+// }
+
 async function addPostComment(io, postId, userId, text) {
     try {
         const post = await Post.findById(postId);
         if (!post) return;
 
+        // Push comment
         post.comments.push({ user: userId, text });
-
-        io.emit("postCommentUpdate", { postId, comments: post.comments.length });
         await post.save();
-        console.log(`💬 Post Comment Updated: Post ID: ${postId}, Comments: ${post.comments.length}`);
+
+        // Get the last comment (the one just added)
+        const latestComment = post.comments[post.comments.length - 1];
+
+        // Populate the user
+        await latestComment.populate("user", "name profilePic");
+
+        // Emit the new comment with user info
+        io.emit("postCommentUpdate", {
+            postId,
+            comment: {
+                _id: latestComment._id,
+                text: latestComment.text,
+                createdAt: latestComment.createdAt,
+                user: {
+                    _id: latestComment.user._id,
+                    name: latestComment.user.name,
+                    profilePic: latestComment.user.profilePic,
+                },
+            },
+        });
+
+        console.log(`💬 Post Comment Added: ${latestComment.text}`);
     } catch (error) {
-        console.error("Error adding post comment:", error);
+        console.error("❌ Error adding post comment:", error);
     }
 }
 
