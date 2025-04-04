@@ -56,7 +56,12 @@ async function updateLikes(io, videoId, userId, isLike) {
         }
 
         // Emit the like update to all connected clients
-        io.emit("likeUpdate", { videoId, likes: video.likes.length });
+        // io.emit("likeUpdate", { videoId, likes: video.likes.length });
+        io.emit("likeUpdate", {
+            videoId,
+            likes: video.likes.length,
+            userLiked: video.likes.includes(userId), // ✅ Add this line
+        });
         await video.save();
         console.log(`👍 Like Updated: Video ID: ${videoId}, Likes: ${video.likes.length}`);
     } catch (error) {
