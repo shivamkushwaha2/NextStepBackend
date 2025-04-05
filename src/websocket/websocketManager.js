@@ -31,33 +31,6 @@ const setupWebSocket = (io) => {
         socket.on("postCommentEvent", (data) => addPostComment(io, data.postId, data.userId, data.comment));
         socket.on("postShareEvent", (data) => addPostShare(io, data.postId, data.userId));
         
-        // socket.on("upvote_project", async ({ projectId, userId }) => {
-        //     try {
-        //       const project = await Project.findById(projectId);
-        //       if (!project) {
-        //         socket.emit("error_project", { message: "Project not found" });
-        //         return;
-        //       }
-          
-        //       const alreadyUpvoted = project.upvotes.includes(userId);
-          
-        //       if (alreadyUpvoted) {
-        //         // User already upvoted → remove (devote)
-        //         project.upvotes = project.upvotes.filter((id) => id !== userId);
-        //       } else {
-        //         // User not upvoted → add
-        //         project.upvotes.push(userId);
-        //       }
-          
-        //       await project.save();
-          
-        //       io.emit("project_updated", project); // Send updated project to all clients
-        //     } catch (err) {
-        //       console.error("Toggle upvote error:", err);
-        //       socket.emit("error_project", { message: "Upvote toggle failed" });
-        //     }
-        //   });
-          
     
         socket.on("upvote_project", async ({ projectId, userId }) => {
           try {
