@@ -42,11 +42,61 @@ const uploadToS3 = async (fileBuffer, fileName, fileType) => {
     }
 };
 
+// const createProject = async (req, res) => {
+//     let imageUrl = "";
+
+//     try {
+//         const {
+//             title,
+//             description,
+//             githubLink,
+//             liveLink,
+//             tags,
+//             techStack,
+//             postedBy
+//         } = req.body;
+
+//         if (!title || !description || !postedBy) {
+//             return res.status(400).json({ message: "Required fields missing" });
+//         }
+
+//         // Parse stringified fields
+//         const parsedTags = tags ? JSON.parse(tags) : [];
+//         const parsedTechStack = techStack ? JSON.parse(techStack) : [];
+//         const parsedPostedBy = postedBy ? JSON.parse(postedBy) : null;
+
+//         if (!parsedPostedBy?.userId) {
+//             return res.status(400).json({ message: "postedBy is required" });
+//         }
+
+//         // Upload image if exists
+//         if (req.file) {
+//             imageUrl = await uploadToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
+//         }
+
+//         const newProject = new Project({
+//             title,
+//             description,
+//             githubLink,
+//             liveLink,
+//             image: imageUrl,
+//             tags: parsedTags,
+//             techStack: parsedTechStack,
+//             postedBy: parsedPostedBy,
+//         });
+
+//         await newProject.save();
+//         res.status(201).json(newProject);
+//     } catch (error) {
+//         console.error("CREATE PROJECT ERROR:", error);
+//         res.status(500).json({ message: "Something went wrong" });
+//     }
+// };
 const createProject = async (req, res) => {
     let imageUrl = "";
 
     try {
-        const {
+        let {
             title,
             description,
             githubLink,
@@ -60,16 +110,22 @@ const createProject = async (req, res) => {
             return res.status(400).json({ message: "Required fields missing" });
         }
 
-        // Parse stringified fields
-        const parsedTags = tags ? JSON.parse(tags) : [];
-        const parsedTechStack = techStack ? JSON.parse(techStack) : [];
-        const parsedPostedBy = postedBy ? JSON.parse(postedBy) : null;
+        // ✅ Safely parse only if they are strings
+        if (typeof tags === "string") {
+            tags = JSON.parse(tags);
+        }
+        if (typeof techStack === "string") {
+            techStack = JSON.parse(techStack);
+        }
+        if (typeof postedBy === "string") {
+            postedBy = JSON.parse(postedBy);
+        }
 
-        if (!parsedPostedBy?.userId) {
+        if (!postedBy?.userId) {
             return res.status(400).json({ message: "postedBy is required" });
         }
 
-        // Upload image if exists
+        // ✅ Upload image if exists
         if (req.file) {
             imageUrl = await uploadToS3(req.file.buffer, req.file.originalname, req.file.mimetype);
         }
@@ -80,9 +136,9 @@ const createProject = async (req, res) => {
             githubLink,
             liveLink,
             image: imageUrl,
-            tags: parsedTags,
-            techStack: parsedTechStack,
-            postedBy: parsedPostedBy,
+            tags,
+            techStack,
+            postedBy,
         });
 
         await newProject.save();
