@@ -15,7 +15,7 @@ const videoRouter = require("../src/routes/videosRoutes");
 const Video = require("../src/models/Video"); 
 const setupWebSocket = require("../src/websocket/websocketManager");
 
-const projectRouter = require("../src/routes/Project");
+const projectRouter = require("../src/routes/project");
 const Project = require("../src/models/Project");
 
 const app = express();
