@@ -30,6 +30,10 @@ const projectSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+githubLink: String,
+liveLink: String,
+techStack: [String],
+
 });
 
 module.exports = mongoose.model("Project", projectSchema);
