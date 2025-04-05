@@ -1,6 +1,7 @@
 const Video = require("../models/Video");
 const mongoose = require("mongoose");
 const Post = require("../models/postModel");
+const Project = require("../models/Project");
 const setupWebSocket = (io) => {
     io.on("connection", (socket) => {
         console.log(`✅ New WebSocket connection: ${socket.id}`);
@@ -29,8 +30,96 @@ const setupWebSocket = (io) => {
         
         socket.on("postCommentEvent", (data) => addPostComment(io, data.postId, data.userId, data.comment));
         socket.on("postShareEvent", (data) => addPostShare(io, data.postId, data.userId));
+        
+        // socket.on("upvote_project", async ({ projectId, userId }) => {
+        //     try {
+        //       const project = await Project.findById(projectId);
+        //       if (!project) {
+        //         socket.emit("error_project", { message: "Project not found" });
+        //         return;
+        //       }
+          
+        //       const alreadyUpvoted = project.upvotes.includes(userId);
+          
+        //       if (alreadyUpvoted) {
+        //         // User already upvoted → remove (devote)
+        //         project.upvotes = project.upvotes.filter((id) => id !== userId);
+        //       } else {
+        //         // User not upvoted → add
+        //         project.upvotes.push(userId);
+        //       }
+          
+        //       await project.save();
+          
+        //       io.emit("project_updated", project); // Send updated project to all clients
+        //     } catch (err) {
+        //       console.error("Toggle upvote error:", err);
+        //       socket.emit("error_project", { message: "Upvote toggle failed" });
+        //     }
+        //   });
+          
+    
+        socket.on("upvote_project", async ({ projectId, userId }) => {
+          try {
+            if (!mongoose.Types.ObjectId.isValid(projectId)) {
+              socket.emit("error_project", { message: "Invalid projectId format" });
+              return;
+            }
+        
+            const project = await Project.findById(projectId);
+            if (!project) {
+              socket.emit("error_project", { message: "Project not found" });
+              return;
+            }
+        
+            const alreadyUpvoted = project.upvotes.includes(userId);
+        
+            if (alreadyUpvoted) {
+              project.upvotes = project.upvotes.filter((id) => id !== userId);
+            } else {
+              project.upvotes.push(userId);
+            }
+        
+            await project.save();
+            io.emit("project_updated", project);
+          } catch (err) {
+            console.error("Upvote toggle error:", err);
+            socket.emit("error_project", { message: "Upvote toggle failed" });
+          }
+        });
+        
+        socket.on("comment_project", async ({ projectId, userId, username, profilePic, text }) => {
+            try {
+              if (!mongoose.Types.ObjectId.isValid(projectId)) {
+                socket.emit("error_project", { message: "Invalid projectId format" });
+                return;
+              }
+          
+              const project = await Project.findById(projectId);
+              if (!project) {
+                socket.emit("error_project", { message: "Project not found" });
+                return;
+              }
+          
+              const comment = {
+                userId,
+                username,
+                profilePic,
+                text,
+                createdAt: new Date(),
+              };
+          
+              project.comments.push(comment);
+              await project.save();
+          
+              io.emit("project_updated", project); // Send updated project with new comment
+            } catch (err) {
+              console.error("Comment error:", err);
+              socket.emit("error_project", { message: "Failed to add comment" });
+            }
+          });
 
-
+          
         // Handle Disconnection
         socket.on("disconnect", () => {
             console.log(`❌ User Disconnected: ${socket.id}`);
@@ -148,23 +237,6 @@ async function updatePostLikes(io, postId, userId, isLike) {
     }
 }
 
-
-
-// Add Post Comment
-// async function addPostComment(io, postId, userId, text) {
-//     try {
-//         const post = await Post.findById(postId);
-//         if (!post) return;
-
-//         post.comments.push({ user: userId, text });
-
-//         io.emit("postCommentUpdate", { postId, comments: post.comments.length });
-//         await post.save();
-//         console.log(`💬 Post Comment Updated: Post ID: ${postId}, Comments: ${post.comments.length}`);
-//     } catch (error) {
-//         console.error("Error adding post comment:", error);
-//     }
-// }
 
 async function addPostComment(io, postId, userId, text) {
     try {

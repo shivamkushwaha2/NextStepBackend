@@ -15,6 +15,9 @@ const videoRouter = require("../src/routes/videosRoutes");
 const Video = require("../src/models/Video"); 
 const setupWebSocket = require("../src/websocket/websocketManager");
 
+const projectRouter = require("../src/routes/Project");
+const Project = require("../src/models/Project");
+
 const app = express();
 const server = http.createServer(app);
 
@@ -47,6 +50,7 @@ app.use("/user", userRouter);
 app.use("/posts", postRouter);
 app.use("/profile", profileRouter);
 app.use("/videos", videoRouter);
+app.use("/projects", projectRouter);
 
 app.get("/", (req, res) => {
     res.send("Welcome to NextStep Backend");
