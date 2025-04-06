@@ -14,6 +14,11 @@ const s3 = new S3Client({
 // ✅ Multer storage setup for handling file upload in memory
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+const uploadProfileFields = multer({ storage }).fields([
+    { name: "profilePic", maxCount: 1 },
+    { name: "resume", maxCount: 1 }
+]);
+
 
 // ✅ Function to upload file to S3 and return the URL
 const uploadToS3 = async (file) => {
@@ -31,7 +36,8 @@ const uploadToS3 = async (file) => {
     return `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
 };
 
-module.exports = { upload, uploadToS3 };
+// module.exports = { upload, uploadToS3 };
+module.exports = { upload, uploadToS3, uploadProfileFields };
 
 
 

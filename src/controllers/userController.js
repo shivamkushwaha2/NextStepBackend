@@ -39,39 +39,6 @@ const signup = async (req, res) => {
 
 module.exports = { signup };
 
-// const signup = async (req, res) => {
-//     const { email, password, name } = req.body;
-
-//     try {
-//         const existingUser = await userModel.findOne({ email: email });
-
-//         if (existingUser) {
-//             return res.status(400).json({
-//                 message: "User already exists"
-//             });
-//         }
-
-//         const hashedPswrd = await bcrypt.hash(password, 10);
-
-//         const result = await userModel.create({
-//             email: email,
-//             password: hashedPswrd,
-//             name: name
-//         });
-
-//         const token = jwt.sign({ email: result.email, id: result._id }, process.env.SECRET_KEY);
-
-//         res.status(201).json({
-//             user: result,
-//             token: token
-//         });
-
-//     } catch (error) {
-//         console.log(error);
-//         res.status(500).json({ message: "Something went wrong" });
-//     }
-// };
-
 const signin = async (req, res)=>{
 
     const {email, password} = req.body;
@@ -107,4 +74,59 @@ const signin = async (req, res)=>{
 
 };
 
-module.exports = {signin,signup};
+
+
+
+const updateProfile = async (req, res) => {
+    const { firstName, lastName, bio, tags, githubUsername } = req.body;
+    const userId = req.userId;
+
+    try {
+        const user = await users.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        let profilePicUrl = null;
+        let resumeUrl = null;
+
+        if (req.files?.profilePic) {
+            profilePicUrl = await uploadToS3(req.files.profilePic[0]);
+        }
+
+        if (req.files?.resume) {
+            resumeUrl = await uploadToS3(req.files.resume[0]);
+        }
+
+        user.name = `${firstName} ${lastName}`;
+        user.bio = bio || "";
+        user.tags = tags?.split(",").map(tag => tag.trim()) || [];
+        user.githubUsername = githubUsername || "";
+        if (profilePicUrl) user.profilePic = profilePicUrl;
+        if (resumeUrl) user.resume = resumeUrl;
+
+        await user.save();
+
+        res.status(200).json({ message: "Profile updated successfully", user });
+    } catch (error) {
+        console.error("Update profile error:", error);
+        res.status(500).json({ message: "Something went wrong" });
+    }
+};
+const getUserProfile = async (req, res) => {
+    const userId = req.params.id;
+
+    try {
+        const user = await userModel.findById(userId).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ user });
+    } catch (error) {
+        console.error("Get Profile Error:", error);
+        res.status(500).json({ message: "Something went wrong" });
+    }
+};
+
+
+module.exports = { signup, signin, updateProfile, getUserProfile };
