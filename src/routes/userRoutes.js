@@ -2,7 +2,7 @@ const express = require("express");
 // const { signup, signin } = require("../controllers/userController");
 // const { upload } = require("../middlewares/uploadMiddleware");
 
-const { signup, signin, updateProfile, getUserProfile } = require("../controllers/userController");
+const { signup, signin, updateProfile, getUserProfile,connectUser,getMyConnections } = require("../controllers/userController");
 const { upload, uploadProfileFields } = require("../middlewares/uploadMiddleware");
 const auth = require("../middlewares/auth");
 
@@ -15,6 +15,11 @@ userRouter.post("/signin",signin );
 
 userRouter.put("/update-profile", auth, uploadProfileFields, updateProfile);
 
+userRouter.get("/connections", auth, getMyConnections);
+
 userRouter.get("/:id", getUserProfile);
+
+userRouter.post("/:targetUserId/connect",auth, connectUser);
+
 // 
 module.exports = userRouter;

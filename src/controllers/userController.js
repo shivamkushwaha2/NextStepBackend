@@ -128,5 +128,69 @@ const getUserProfile = async (req, res) => {
     }
 };
 
+// POST /users/:targetUserId/connect
+const connectUser = async (req, res) => {
+    const currentUserId = req.userId;
+    const targetUserId = req.params.targetUserId;
 
-module.exports = { signup, signin, updateProfile, getUserProfile };
+    try {
+        if (currentUserId === targetUserId) {
+            return res.status(400).json({ message: "You cannot connect with yourself" });
+        }
+
+        const currentUser = await userModel.findById(currentUserId);
+        const targetUser = await userModel.findById(targetUserId);
+
+        if (!currentUser || !targetUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (!currentUser.connections.includes(targetUserId)) {
+            currentUser.connections.push(targetUserId);
+            await currentUser.save();
+        }
+
+        res.status(200).json({ message: "Connected successfully" });
+    } catch (error) {
+        console.error("Connect error:", error);
+        res.status(500).json({ message: "Something went wrong" });
+    }
+};
+
+// // DELETE /users/:targetUserId/disconnect
+// const disconnectUser = async (req, res) => {
+//     const currentUserId = req.userId;
+//     const targetUserId = req.params.targetUserId;
+
+//     try {
+//         const currentUser = await userModel.findById(currentUserId);
+//         currentUser.connections = currentUser.connections.filter(
+//             (id) => id.toString() !== targetUserId
+//         );
+//         await currentUser.save();
+
+//         res.status(200).json({ message: "Disconnected successfully" });
+//     } catch (error) {
+//         console.error("Disconnect error:", error);
+//         res.status(500).json({ message: "Something went wrong" });
+//     }
+// };
+
+
+const getMyConnections = async (req, res) => {
+    const userId = req.userId;
+
+    try {
+        const user = await userModel.findById(userId)
+            .populate("connections", "name email profilePic") // Only basic fields
+            .select("connections");
+
+        res.status(200).json({ connections: user.connections });
+    } catch (error) {
+        console.error("Get connections error:", error);
+        res.status(500).json({ message: "Something went wrong" });
+    }
+};
+
+
+module.exports = { signup, signin, updateProfile, getUserProfile, connectUser , getMyConnections};

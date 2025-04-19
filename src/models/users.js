@@ -19,7 +19,8 @@ const userSchema = new mongoose.Schema({
     bio: { type: String, default: "" },
     tags: { type: [String], default: [] },
     githubUsername: { type: String, default: "" },
-    resume: { type: String, default: "" }
+    resume: { type: String, default: "" },
+    connections: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, { timestamps: true });
 
 module.exports = users = mongoose.model('User', userSchema);

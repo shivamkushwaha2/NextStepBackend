@@ -12,6 +12,8 @@ const postRouter = require("../src/routes/postRoutes");
 const profileRouter = require("../src/routes/profileRoutes");
 const userRouter = require("../src/routes/userRoutes");
 const videoRouter = require("../src/routes/videosRoutes");
+const chatRouter = require("../src/routes/chatRoutes");
+
 const Video = require("../src/models/Video"); 
 const setupWebSocket = require("../src/websocket/websocketManager");
 
@@ -51,6 +53,7 @@ app.use("/posts", postRouter);
 app.use("/profile", profileRouter);
 app.use("/videos", videoRouter);
 app.use("/projects", projectRouter);
+app.use("/chats", chatRouter);
 
 app.get("/", (req, res) => {
     res.send("Welcome to NextStep Backend");
