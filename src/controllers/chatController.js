@@ -79,7 +79,7 @@
 // module.exports = { createOrGetChat, getMyChats, sendMessage, getMessages };
 
 
-const Message = require("../models/Message");
+const Message = require("../models/message");
 const Chat = require("../models/chat");
 // Create or fetch existing chat between two users
 const createOrGetChat = async (req, res) => {

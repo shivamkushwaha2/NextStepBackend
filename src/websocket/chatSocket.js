@@ -1,5 +1,5 @@
 const Chat = require("../models/chat");
-const Message = require("../models/Message");
+const Message = require("../models/message");
 const User = require("../models/users");
 
 const chatSocketHandler = (io, socket) => {
