@@ -2,6 +2,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const multer = require("multer");
 const Post = require("../models/postModel");
 require("dotenv").config();
+const User = require("../models/users"); // Import User model
 
 // Initialize S3 Client
 const s3 = new S3Client({
@@ -78,19 +79,42 @@ const createPost = async (req, res) => {
 };
 
 
+// const getPosts = async (req, res) => {
+//     try {
+//         const posts = await Post.find()
+//             .populate("user", "name email profilePic")
+//             .populate("comments.user", "name email profilePic") // ✅ populate user in comments
+//             .sort({ createdAt: -1 });
+
+//         res.status(200).json(posts);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: "Something went wrong" });
+//     }
+// };
+
 const getPosts = async (req, res) => {
     try {
+        const currentUserId = req.userId; 
+        const currentUser = await User.findById(currentUserId).select("connections");
+
         const posts = await Post.find()
             .populate("user", "name email profilePic")
-            .populate("comments.user", "name email profilePic") // ✅ populate user in comments
+            .populate("comments.user", "name email profilePic")
             .sort({ createdAt: -1 });
 
-        res.status(200).json(posts);
+        const postsWithConnectionStatus = posts.map(post => {
+            const postObj = post.toObject();
+            const isConnected = currentUser.connections.includes(post.user._id.toString());
+            postObj.user.isConnected = isConnected;
+            return postObj;
+        });
+
+        res.status(200).json(postsWithConnectionStatus);
     } catch (error) {
-        console.error(error);
+        console.error("GET POSTS ERROR:", error);
         res.status(500).json({ message: "Something went wrong" });
     }
 };
-
 
 module.exports = { createPost, getPosts, upload };
