@@ -2,10 +2,13 @@ const Video = require("../models/Video");
 const mongoose = require("mongoose");
 const Post = require("../models/postModel");
 const Project = require("../models/Project");
+const chatSocketHandler = require("./chatSocket");
 const setupWebSocket = (io) => {
     io.on("connection", (socket) => {
         console.log(`✅ New WebSocket connection: ${socket.id}`);
     
+        chatSocketHandler(io, socket);
+
         // Listen for like events
         socket.on("likeEvent", (data) => {
             updateLikes(io, data.videoId, data.userId, data.isLike);
