@@ -33,15 +33,18 @@ socket.on("send_message", (data) => {
 
   const message = new Message({ chat, sender, text });
 
-  message.save()
-    .then(() => {
-      console.log("Message saved successfully");
-      io.to(chat).emit("new_message", message);
-    })
-    .catch((err) => {
-      console.error("Error saving message:", err);
-    });
+message.save()
+  .then((savedMessage) =>
+    savedMessage.populate("sender", "name profilePic")  // populate fields
+  )
+  .then((populatedMessage) => {
+    io.to(chat).emit("new_message", populatedMessage); // now it sends a full JSON object
+  })
+  .catch((err) => {
+    console.error("Error saving message:", err);
+  });
 });
+
 
   socket.on("disconnect", () => {
     console.log(`Socket ${socket.id} disconnected`);
