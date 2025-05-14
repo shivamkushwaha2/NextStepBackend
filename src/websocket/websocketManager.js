@@ -6,7 +6,7 @@ const chatSocketHandler = require("./chatSocket");
 const setupWebSocket = (io) => {
     io.on("connection", (socket) => {
         console.log(`✅ New WebSocket connection: ${socket.id}`);
-    
+
         chatSocketHandler(io, socket);
 
         // Listen for like events

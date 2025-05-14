@@ -78,61 +78,61 @@
 
 // module.exports = { createOrGetChat, getMyChats, sendMessage, getMessages };
 
-
 const Message = require("../models/message");
 const Chat = require("../models/chat");
-// Create or fetch existing chat between two users
+
+// Create or fetch existing chat
 const createOrGetChat = async (req, res) => {
-    const userId = req.userId;
-    const targetUserId = req.params.userId;
+  const userId = req.userId;
+  const targetUserId = req.params.userId;
 
-    try {
-        let chat = await Chat.findOne({
-            participants: { $all: [userId, targetUserId], $size: 2 }
-        }).populate("participants", "name profilePic");
+  try {
+    let chat = await Chat.findOne({
+      participants: { $all: [userId, targetUserId], $size: 2 }
+    }).populate("participants", "name profilePic");
 
-        if (!chat) {
-            chat = await Chat.create({ participants: [userId, targetUserId] });
-        }
-
-        res.status(200).json(chat);
-    } catch (err) {
-        console.error("Create/Get Chat Error:", err);
-        res.status(500).json({ message: "Something went wrong" });
+    if (!chat) {
+      chat = await Chat.create({ participants: [userId, targetUserId] });
     }
+
+    res.status(200).json(chat);
+  } catch (err) {
+    console.error("Create/Get Chat Error:", err);
+    res.status(500).json({ message: "Something went wrong" });
+  }
 };
 
-// Get user's chat list
+// Get user’s chat list
 const getMyChats = async (req, res) => {
-    const userId = req.userId;
+  const userId = req.userId;
 
-    try {
-        const chats = await Chat.find({ participants: userId })
-            .populate("participants", "name profilePic")
-            .populate("lastMessage")
-            .sort({ updatedAt: -1 });
+  try {
+    const chats = await Chat.find({ participants: userId })
+      .populate("participants", "name profilePic")
+      .populate("lastMessage")
+      .sort({ updatedAt: -1 });
 
-        res.status(200).json(chats);
-    } catch (err) {
-        console.error("Get Chats Error:", err);
-        res.status(500).json({ message: "Something went wrong" });
-    }
+    res.status(200).json(chats);
+  } catch (err) {
+    console.error("Get Chats Error:", err);
+    res.status(500).json({ message: "Something went wrong" });
+  }
 };
 
-// Get messages from a chat
+// Get messages in chat
 const getMessages = async (req, res) => {
-    const chatId = req.params.chatId;
+  const chatId = req.params.chatId;
 
-    try {
-        const messages = await Message.find({ chat: chatId })
-            .populate("sender", "name profilePic")
-            .sort({ createdAt: 1 });
+  try {
+    const messages = await Message.find({ chat: chatId })
+      .populate("sender", "name profilePic")
+      .sort({ createdAt: 1 });
 
-        res.status(200).json(messages);
-    } catch (err) {
-        console.error("Get Messages Error:", err);
-        res.status(500).json({ message: "Something went wrong" });
-    }
+    res.status(200).json(messages);
+  } catch (err) {
+    console.error("Get Messages Error:", err);
+    res.status(500).json({ message: "Something went wrong" });
+  }
 };
 
 module.exports = { createOrGetChat, getMyChats, getMessages };
